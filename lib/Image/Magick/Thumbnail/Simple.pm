@@ -4,7 +4,7 @@ use 5.008008;
 use strict;
 use warnings;
 
-our $VERSION = '0.10';
+our $VERSION = '0.12';
 
 require Image::Magick;
 
@@ -21,6 +21,8 @@ sub new {
 		SIZE    => $argv{'size'}    || undef,
 		BLUR    => $argv{'blur'}    || 1,
 		QUALITY => $argv{'quality'} || undef,
+		WIDTH   => undef,
+		HEIGHT  => undef,
 	};
 	bless( $self, $class );
 	return $self;
@@ -55,6 +57,20 @@ sub quality {
 	my $self = shift;
 	if( @_ ){ $self -> {QUALITY} = shift }
 	return $self -> {QUALITY};
+}
+#-------------------------------------------------------------------------------
+# width
+#-------------------------------------------------------------------------------
+sub width {
+	my $self = shift;
+	return $self -> {WIDTH};
+}
+#-------------------------------------------------------------------------------
+# height
+#-------------------------------------------------------------------------------
+sub height {
+	my $self = shift;
+	return $self -> {HEIGHT};
 }
 #-------------------------------------------------------------------------------
 # thumbnail
@@ -98,23 +114,24 @@ sub thumbnail {
 
 	# horizonal
 	if( $width > $height ){
-		$height = int( $height * ( $size / $width ) );
-		$width = $size;
+		$self -> {HEIGHT} = int( $height * ( $size / $width ) );
+		$self -> {WIDTH} = $size;
 	}
 
 	# vertical
 	else {
-		$width = int( $width * ( $size / $height ) );
-		$height = $size;
+		$self -> {WIDTH} = int( $width * ( $size / $height ) );
+		$self -> {HEIGHT} = $size;
 	}
 
 	$image -> Set( quality => $quality ) if $quality;
 	$image -> Resize(
-		width  => $width,
-		height => $height,
+		width  => $self -> {WIDTH},
+		height => $self -> {HEIGHT},
 		blur   => $blur,
 	);
 	$image -> Write( $output );
+	return 1;
 }
 
 # Preloaded methods go here.
@@ -127,7 +144,29 @@ __END__
 
 Image::Magick::Thumbnail::Simple - The thumbnail image is easily made without uselessness.
 
-=head1 DESCRIPTION
+=head1 SYNOPSIS
+
+=head2 It outputs it to the file. 
+
+  use Image::Magick::Thumbnail::Simple;
+  my $t = new Image::Magick::Thumbnail::Simple;
+  $t -> thumbnail(
+    input  => 'input.jpg',
+    output => 'output.jpg',
+    size   => 128,
+  ) or die $t -> error;
+
+=head2 It outputs it to the STDOUT. 
+
+  use Image::Magick::Thumbnail::Simple;
+  my $t = new Image::Magick::Thumbnail::Simple;
+  binmode STDOUT;
+  print "Content-type: image/jpeg\n\n";
+  $t -> thumbnail(
+    input  => 'input.jpg',
+    output => 'jpg:-',
+    size   => 128,
+  ) or die $t -> error;
 
 =head2 When specifying it when initializing it
 
@@ -161,35 +200,22 @@ The input and the output can be specified only for individual.
     quality => 80,
   );
 
-=head1 SYNOPSIS
+=head2 Width of thumbnail image
 
-=head2 It outputs it to the file. 
+  $width = $t -> width;
 
-  use Image::Magick::Thumbnail::Simple;
-  my $t = new Image::Magick::Thumbnail::Simple;
-  $t -> thumbnail(
-    input  => 'input.jpg',
-    output => 'output.jpg',
-    size   => 128,
-  );
+=head2 Height of thumbnail image
 
-=head2 It outputs it to the STDOUT. 
-
-  use Image::Magick::Thumbnail::Simple;
-  my $t = new Image::Magick::Thumbnail::Simple;
-  binmode STDOUT;
-  print "Content-type: image/jpeg\n\n";
-  $t -> thumbnail(
-    input  => 'input.jpg',
-    output => 'jpg:-',
-    size   => 128,
-  );
+  $height = $t -> height;
 
 =head1 DESCRIPTION
 
 The thumbnail image can be easily made by using Image::Magick.
 A basic setting is the same as Image::Magick.
 Only the processing of the resize of the image is treated.
+The version opened to the public is 0.10.
+In 0.12, it came to return a size that corrected of the explanation 
+and was thumbnail.
 
 =head1 SEE ALSO
 
